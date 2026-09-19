@@ -1,0 +1,39 @@
+{
+  "id": "/",
+  "name": "Farmers — Farm Management",
+  "short_name": "Farmers",
+  "description": "Multi-tenant farm management for farmers and their teams.",
+  "start_url": "/dashboard",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
+  "background_color": "#f3f6fb",
+  "theme_color": "#2563eb",
+  "orientation": "any",
+  "categories": ["business", "productivity"],
+  "icons": [
+    {
+      "src": "/icons/farmers.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Dashboard",
+      "short_name": "Dashboard",
+      "url": "/dashboard"
+    },
+    {
+      "name": "Batches",
+      "short_name": "Batches",
+      "url": "/batches"
+    },
+    {
+      "name": "Request Feature",
+      "short_name": "Feature",
+      "url": "/feature-requests"
+    }
+  ]
+}
