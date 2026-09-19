@@ -42,11 +42,13 @@ Route::middleware('installed')->group(function () {
         Route::get('/superuser', [SuperuserController::class, 'dashboard'])->name('superuser.dashboard');
         Route::get('/superuser/mcp', [SuperuserController::class, 'mcp'])->name('superuser.mcp');
 
+        Route::post('/farms/switch', FarmSwitchController::class)
+            ->middleware('verified')
+            ->name('farms.switch');
+
         Route::middleware(['verified', 'tenant'])->group(function () {
             Route::get('/', fn () => redirect()->route('dashboard'));
             Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
-            Route::post('/farms/switch', FarmSwitchController::class)->name('farms.switch');
-
             Route::get('/batches', [BatchController::class, 'index'])->name('batches.index');
             Route::post('/batches', [BatchController::class, 'store'])->name('batches.store');
 
