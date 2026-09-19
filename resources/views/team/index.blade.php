@@ -9,11 +9,33 @@
 @forelse($members as $member)
 <div class="mobile-record"><div class="mr-top"><div><h4>{{ $member->user->name }}</h4><p>{{ $member->user->email }} · {{ $member->role?->name ?? 'Staff' }}</p></div><span class="badge {{ $member->status==='active'?'badge-success':'badge-danger' }}">{{ ucfirst($member->status) }}</span></div>
 @if($member->user_id !== $farm->owner_id)
+<div class="actions">
 <form method="POST" action="{{ route('team.status',$member) }}">@csrf @method('PATCH')
 <input type="hidden" name="status" value="{{ $member->status==='active'?'inactive':'active' }}">
 <button class="btn {{ $member->status==='active'?'btn-danger':'btn-success' }}" type="submit">{{ $member->status==='active'?'Revoke access':'Restore access' }}</button>
 </form>
-@else<span class="hint">Farm owner</span>@endif
+</div>
+<details style="margin-top:10px">
+<summary style="cursor:pointer;font-size:12px;font-weight:750;color:var(--primary)">Manage permissions</summary>
+<form method="POST" action="{{ route('team.permissions',$member) }}" style="margin-top:10px">@csrf @method('PUT')
+<div class="form-grid">
+@php($overrides = $memberOverrides->get($member->user_id, collect())->keyBy('permission_id'))
+@foreach($permissions as $permission)
+@php($override = $overrides->get($permission->id))
+@php($roleAllows = $member->role?->permissions()->where('permissions.id',$permission->id)->exists() ?? false)
+<label style="display:flex;gap:7px;align-items:flex-start;font-size:11px">
+<input type="checkbox" name="permissions[]" value="{{ $permission->key }}" @checked($override ? $override->allowed : $roleAllows)>
+<span><strong>{{ $permission->name }}</strong><br><span class="hint">{{ $permission->key }}</span></span>
+</label>
+@endforeach
+</div>
+<button class="btn btn-primary" style="margin-top:10px">Save custom permissions</button>
+</form>
+<form method="POST" action="{{ route('team.permissions.reset',$member) }}" style="margin-top:7px">@csrf @method('DELETE')
+<button class="btn btn-secondary">Reset to role defaults</button>
+</form>
+</details>
+@else<span class="hint">Farm owner · full farm access</span>@endif
 </div>
 @empty<div class="empty">No team members yet.</div>@endforelse
 </div></div></div>
