@@ -26,6 +26,7 @@ class AccessSeeder extends Seeder
             'team' => ['view', 'manage'],
             'settings' => ['view', 'manage'],
             'feature-requests' => ['view', 'create'],
+            'backup' => ['view', 'export', 'import'],
         ];
 
         $permissions = collect();
