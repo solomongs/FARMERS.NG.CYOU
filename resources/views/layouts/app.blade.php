@@ -33,6 +33,7 @@
             <a href="#"><span class="nav-icon">💵</span> Sales</a>
             <a href="#"><span class="nav-icon">🧾</span> Expenses</a>
             <a href="#"><span class="nav-icon">📦</span> Inventory</a>
+            <a href="{{ route('team.index') }}" class="{{ request()->routeIs('team.*') ? 'active' : '' }}"><span class="nav-icon">👥</span> Team</a>
 
             <div class="nav-label">Tools</div>
             <a href="#"><span class="nav-icon">📊</span> Performance</a>
