@@ -60,6 +60,8 @@ Route::middleware('installed')->group(function () {
             Route::get('/team', [TeamController::class, 'index'])->name('team.index');
             Route::post('/team/invitations', [TeamController::class, 'invite'])->name('team.invite');
             Route::patch('/team/memberships/{membership}/status', [TeamController::class, 'status'])->name('team.status');
+            Route::put('/team/memberships/{membership}/permissions', [TeamController::class, 'permissions'])->name('team.permissions');
+            Route::delete('/team/memberships/{membership}/permissions', [TeamController::class, 'resetPermissions'])->name('team.permissions.reset');
             Route::delete('/team/invitations/{invitation}', [TeamController::class, 'cancelInvitation'])->name('team.invitation.cancel');
 
             Route::get('/feature-requests', [FeatureRequestController::class, 'index'])->name('feature-requests.index');
