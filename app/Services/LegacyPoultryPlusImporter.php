@@ -58,25 +58,41 @@ class LegacyPoultryPlusImporter
     {
         $summary = $this->inspect($data);
 
-        if (LegacyImport::query()->where('farm_id', $farm->id)->where('file_hash', $hash)->exists()) {
+        $import = LegacyImport::query()
+            ->where('farm_id', $farm->id)
+            ->where('file_hash', $hash)
+            ->first();
+
+        if ($import?->status === 'completed') {
             throw new RuntimeException('This exact PoultryPlus backup has already been imported into this farm.');
         }
 
-        $import = LegacyImport::create([
-            'uuid' => (string) Str::uuid(),
-            'farm_id' => $farm->id,
-            'imported_by' => $user->id,
-            'source' => 'poultryplus-v2',
-            'source_farm_id' => $summary['source_farm_id'] ?: null,
-            'source_farm_name' => $summary['source_farm_name'],
-            'file_hash' => $hash,
-            'archive_path' => $archivePath,
-            'source_version' => $summary['source_version'],
-            'source_exported_at' => $this->dateTime($summary['source_exported_at']),
-            'status' => 'processing',
-            'counts' => [],
-            'warnings' => [],
-        ]);
+        if ($import) {
+            $import->update([
+                'imported_by' => $user->id,
+                'archive_path' => $archivePath,
+                'status' => 'processing',
+                'counts' => [],
+                'warnings' => [],
+                'error_message' => null,
+            ]);
+        } else {
+            $import = LegacyImport::create([
+                'uuid' => (string) Str::uuid(),
+                'farm_id' => $farm->id,
+                'imported_by' => $user->id,
+                'source' => 'poultryplus-v2',
+                'source_farm_id' => $summary['source_farm_id'] ?: null,
+                'source_farm_name' => $summary['source_farm_name'],
+                'file_hash' => $hash,
+                'archive_path' => $archivePath,
+                'source_version' => $summary['source_version'],
+                'source_exported_at' => $this->dateTime($summary['source_exported_at']),
+                'status' => 'processing',
+                'counts' => [],
+                'warnings' => [],
+            ]);
+        }
 
         try {
             $result = DB::transaction(function () use ($data, $farm, $user, $import, $summary) {
@@ -256,7 +272,7 @@ class LegacyPoultryPlusImporter
                 'supplier' => $record['supplier'] ?? null,
                 'source' => $record['source'] ?? 'PoultryPlus import',
                 'expected_cycle_days' => isset($record['expectedCycleDays']) ? (int) $record['expectedCycleDays'] : null,
-                'status' => $record['deleted'] ?? false ? 'archived' : ($record['status'] ?? 'active'),
+                'status' => ($record['deleted'] ?? false) ? 'archived' : ($record['status'] ?? 'active'),
                 'notes' => $record['notes'] ?? null,
                 'created_at' => $this->dateTime($record['createdAt'] ?? null) ?? now(),
                 'updated_at' => $this->dateTime($record['updatedAt'] ?? null) ?? now(),
