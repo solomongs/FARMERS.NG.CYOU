@@ -6,8 +6,10 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\FarmSwitchController;
 use App\Http\Controllers\FeatureRequestController;
 use App\Http\Controllers\InstallerController;
+use App\Http\Controllers\InvitationController;
 use App\Http\Controllers\LegacyImportController;
 use App\Http\Controllers\SuperuserController;
+use App\Http\Controllers\TeamController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/install', [InstallerController::class, 'index'])->name('installer.index');
@@ -15,6 +17,9 @@ Route::post('/install', [InstallerController::class, 'store'])->name('installer.
 Route::get('/install/complete', [InstallerController::class, 'complete'])->name('installer.complete');
 
 Route::middleware('installed')->group(function () {
+    Route::get('/invitations/{token}', [InvitationController::class, 'show'])->name('invitations.show');
+    Route::post('/invitations/{token}', [InvitationController::class, 'accept'])->name('invitations.accept');
+
     Route::middleware('guest')->group(function () {
         Route::get('/login', [AuthController::class, 'loginForm'])->name('login');
         Route::post('/login', [AuthController::class, 'login'])->name('login.store');
@@ -51,6 +56,11 @@ Route::middleware('installed')->group(function () {
             Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
             Route::get('/batches', [BatchController::class, 'index'])->name('batches.index');
             Route::post('/batches', [BatchController::class, 'store'])->name('batches.store');
+
+            Route::get('/team', [TeamController::class, 'index'])->name('team.index');
+            Route::post('/team/invitations', [TeamController::class, 'invite'])->name('team.invite');
+            Route::patch('/team/memberships/{membership}/status', [TeamController::class, 'status'])->name('team.status');
+            Route::delete('/team/invitations/{invitation}', [TeamController::class, 'cancelInvitation'])->name('team.invitation.cancel');
 
             Route::get('/feature-requests', [FeatureRequestController::class, 'index'])->name('feature-requests.index');
             Route::post('/feature-requests', [FeatureRequestController::class, 'store'])->name('feature-requests.store');
