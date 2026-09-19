@@ -4,7 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\Invitation;
 use App\Models\Membership;
+use App\Models\Permission;
 use App\Models\Role;
+use App\Models\UserPermission;
 use App\Notifications\TeamInvitationNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -38,7 +40,13 @@ class TeamController extends Controller
             ->limit(30)
             ->get();
 
-        return view('team.index', compact('farm', 'members', 'roles', 'invitations'));
+        $permissions = Permission::query()->orderBy('module_key')->orderBy('name')->get();
+        $memberOverrides = UserPermission::query()
+            ->where('farm_id', $farm->id)
+            ->get()
+            ->groupBy('user_id');
+
+        return view('team.index', compact('farm', 'members', 'roles', 'invitations', 'permissions', 'memberOverrides'));
     }
 
     public function invite(Request $request)
@@ -124,6 +132,52 @@ class TeamController extends Controller
         ]);
 
         return back()->with('success', $validated['status'] === 'active' ? 'Staff access restored.' : 'Staff access revoked.');
+    }
+
+    public function permissions(Request $request, Membership $membership)
+    {
+        $farm = app('currentFarm');
+        abort_unless($farm && $request->user()->hasFarmPermission($farm->id, 'team.manage'), 403);
+        abort_unless($membership->farm_id === $farm->id, 404);
+        abort_if($membership->user_id === $farm->owner_id, 422, 'The farm owner permissions cannot be overridden.');
+
+        $allowedKeys = collect($request->input('permissions', []))
+            ->filter(fn ($key) => is_string($key))
+            ->values();
+
+        $permissions = Permission::query()->get();
+
+        DB::transaction(function () use ($farm, $membership, $permissions, $allowedKeys) {
+            foreach ($permissions as $permission) {
+                UserPermission::updateOrCreate(
+                    [
+                        'farm_id' => $farm->id,
+                        'user_id' => $membership->user_id,
+                        'permission_id' => $permission->id,
+                    ],
+                    [
+                        'allowed' => $allowedKeys->contains($permission->key),
+                    ]
+                );
+            }
+        });
+
+        return back()->with('success', 'Custom staff permissions updated.');
+    }
+
+    public function resetPermissions(Request $request, Membership $membership)
+    {
+        $farm = app('currentFarm');
+        abort_unless($farm && $request->user()->hasFarmPermission($farm->id, 'team.manage'), 403);
+        abort_unless($membership->farm_id === $farm->id, 404);
+        abort_if($membership->user_id === $farm->owner_id, 422, 'The farm owner permissions cannot be overridden.');
+
+        UserPermission::query()
+            ->where('farm_id', $farm->id)
+            ->where('user_id', $membership->user_id)
+            ->delete();
+
+        return back()->with('success', 'Staff permissions reset to the assigned role defaults.');
     }
 
     public function cancelInvitation(Request $request, Invitation $invitation)
