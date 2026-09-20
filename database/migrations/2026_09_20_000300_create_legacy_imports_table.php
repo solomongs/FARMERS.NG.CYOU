@@ -10,42 +10,57 @@ return new class extends Migration
     {
         Schema::create('legacy_imports', function (Blueprint $table) {
             $table->id();
+            $table->uuid('uuid')->unique();
             $table->foreignId('farm_id')->constrained()->cascadeOnDelete();
-            $table->foreignId('user_id')->constrained()->restrictOnDelete();
-            $table->string('source', 80)->default('poultryplus-static');
-            $table->string('original_filename')->nullable();
+            $table->foreignId('imported_by')->constrained('users')->restrictOnDelete();
+            $table->string('source', 80)->default('poultryplus-v2');
+            $table->string('source_farm_id')->nullable()->index();
+            $table->string('source_farm_name')->nullable();
+            $table->string('file_hash', 64)->index();
+            $table->string('archive_path')->nullable();
+            $table->unsignedInteger('source_version')->nullable();
+            $table->timestamp('source_exported_at')->nullable();
             $table->string('status', 30)->default('pending')->index();
-            $table->unsignedInteger('records_detected')->default(0);
-            $table->unsignedInteger('records_imported')->default(0);
-            $table->unsignedInteger('records_skipped')->default(0);
-            $table->unsignedInteger('records_failed')->default(0);
-            $table->json('summary')->nullable();
-            $table->json('errors')->nullable();
-            $table->string('checksum', 64)->nullable()->index();
-            $table->timestamp('completed_at')->nullable();
+            $table->json('counts')->nullable();
+            $table->json('warnings')->nullable();
+            $table->text('error_message')->nullable();
             $table->timestamps();
 
+            $table->unique(['farm_id', 'file_hash']);
             $table->index(['farm_id', 'status']);
         });
 
-        Schema::create('legacy_import_map', function (Blueprint $table) {
+        Schema::create('legacy_record_maps', function (Blueprint $table) {
             $table->id();
             $table->foreignId('legacy_import_id')->constrained('legacy_imports')->cascadeOnDelete();
             $table->foreignId('farm_id')->constrained()->cascadeOnDelete();
-            $table->string('source_type', 80);
-            $table->string('source_id', 191);
-            $table->string('target_type', 120);
-            $table->string('target_id', 191);
+            $table->string('store_name', 80);
+            $table->string('legacy_id', 191);
+            $table->string('target_table', 120)->nullable();
+            $table->unsignedBigInteger('target_id')->nullable();
+            $table->string('status', 30)->default('imported');
+            $table->text('note')->nullable();
             $table->timestamps();
 
-            $table->unique(['farm_id', 'source_type', 'source_id'], 'legacy_map_unique_source');
-            $table->index(['legacy_import_id', 'source_type']);
+            $table->unique(['farm_id', 'store_name', 'legacy_id'], 'legacy_record_maps_unique_source');
+            $table->index(['legacy_import_id', 'store_name']);
+        });
+
+        Schema::create('farm_settings', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('farm_id')->constrained()->cascadeOnDelete();
+            $table->string('key', 120);
+            $table->longText('value')->nullable();
+            $table->timestamps();
+
+            $table->unique(['farm_id', 'key']);
         });
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('legacy_import_map');
+        Schema::dropIfExists('farm_settings');
+        Schema::dropIfExists('legacy_record_maps');
         Schema::dropIfExists('legacy_imports');
     }
 };
