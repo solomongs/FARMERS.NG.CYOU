@@ -183,6 +183,67 @@ The module registry reserves keys for Dashboard, Farm Profile, Batch Management,
 
 New functionality should be added through the module registry instead of tightly coupling it to the core application.
 
+## Import from the static PoultryPlus site
+
+Every farm workspace can import its own existing static PoultryPlus data after registration.
+
+Open:
+
+```text
+/migration/static
+```
+
+The sidebar exposes this as **Import PoultryPlus**.
+
+### Migration workflow
+
+1. Open the old static PoultryPlus site.
+2. Use its existing Backup / Export function to create the JSON backup for the farm.
+3. Sign in to Farmers and select the destination farm workspace.
+4. Open **Import PoultryPlus**.
+5. Select the exported JSON file.
+6. Confirm that the backup belongs to the selected farm.
+7. Run the import.
+
+The legacy backup format is recognized through its existing metadata and store names, including:
+
+- `_farmId`
+- `_version`
+- `_exportedAt`
+- `batches`
+- `dailyRecords`
+- `feedRecords`
+- `vaccinationRecords`
+- `mortalityRecords`
+- `eggProductionRecords`
+- `salesRecords`
+- `expenseRecords`
+- `inventoryRecords`
+- `weeklyBodyWeightRecords`
+- `performanceSummaries`
+- `auditLogs`
+- `settings`
+
+### Import safety
+
+The importer:
+
+- imports only into the currently selected farm workspace
+- requires the `backup.import` permission
+- rejects mixed-farm backup files
+- does not import old passwords, sessions, or authentication state
+- archives the original JSON privately for traceability
+- creates legacy-to-Laravel record mappings
+- skips records already imported from the same legacy ID
+- blocks importing the exact same backup twice into the same farm
+- preserves deleted legacy records using Laravel soft-delete state where supported
+- recalculates current bird population after migration
+- skips legacy expenses categorized as Feed so feed cost is not double-counted
+- preserves legacy settings and performance summaries while Laravel recalculates live operational metrics from source records
+- writes an audit event for completed imports
+
+This makes the importer available to all farmers while maintaining tenant isolation: one farmer's backup cannot be imported into or expose another farmer's workspace without authorized access to that workspace.
+
 ## PWA
 
 The app includes:
