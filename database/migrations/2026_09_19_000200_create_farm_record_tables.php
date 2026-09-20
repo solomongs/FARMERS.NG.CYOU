@@ -85,6 +85,7 @@ return new class extends Migration
             $table->foreignId('batch_id')->constrained()->cascadeOnDelete();
             $table->foreignId('recorded_by')->constrained('users')->restrictOnDelete();
             $table->date('record_date');
+            $table->unsignedInteger('age_days')->nullable();
             $table->unsignedInteger('number_of_birds');
             $table->unsignedInteger('eggs_collected');
             $table->unsignedInteger('cracked_eggs')->default(0);
